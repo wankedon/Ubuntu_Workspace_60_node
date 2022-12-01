@@ -1,0 +1,210 @@
+syntax = "proto3";
+package zb.dcts.node.module.spatailSpectrum.internal; //空间谱测向模块(内部使用)
+
+import "node/modulation.proto";
+import "node/spectrum.proto";
+import "google/protobuf/empty.proto";
+
+// 请求通用回复
+message DeviceReply
+{
+	enum ErrorCode
+	{
+		ERROR_NONE = 0;
+		ERROR_INTERNAL = 1;
+	}
+	ErrorCode error_code = 1;	// 错误码
+	string error_info = 2;		// 消息
+}
+
+// 工作模式
+message WorkMode 
+{
+    int32   antenna_mode = 1; // 天线模式 1-放大模式；2-直通模式、3-测试模式
+    int32	receive_mode = 2; // 接收机模式 1-低噪声；2-常规
+    int32	gain = 3;		  // 增益值（单位：dB）修改为参考电平
+	int32   interval = 4;     //数据回传间隔（单位：ms）
+}
+
+// 标校参数
+message CalibrationParam
+{
+	int32   antenna_mode = 1; 				  // 天线模式 1-下变频模式；2-直通模式、3-测试模式
+    int32	gain = 2;						  // 增益值（单位：dB） -30~30dB
+	int32	downconverter_mode = 3; 		  //下变频器工作模式 常规0 低噪声1 低失真2
+	int32	downconverter_if_attenuation = 4; //下变频器中频衰减 0~30dB
+    int32	receive_mode = 5; 				  // 接收机模式 0-常规; 1-低噪声；
+    int32	receive_rf_attenuation = 6; 	  // 接收机射频衰减 0~30dB
+    int32	receive_if_attenuation = 7; 	  // 接收机中频衰减 0~20dB
+    int32	attenuation_mode = 8; 			  // 衰减模式 0：自动，1：手动
+}
+
+// 门限模式
+message ThresholdMode
+{
+	int32   mode = 1; 	// 门限模式 0-手动，1：自动
+	int32 	value = 2; 	//门限值
+}
+
+// 频段参数
+message BandParam 
+{
+    spectrum.FrequencySpan span = 1; // 频段范围
+    double IF_bandwidth = 2;		 // 中频带宽（单位：Hz）
+}
+
+// 频谱数据
+message SpectrumData 
+{
+    spectrum.FrequencySpan span = 1;
+    repeated float amplitude = 2;		// 频点幅度（单位：dBm）
+}
+
+// 全景扫描请求
+message PanoramicScanRequest 
+{
+	WorkMode         work_mode = 1; // 工作模式
+	BandParam        band_param = 2; // 通用监测任务请求参数
+	CalibrationParam calibration_param = 3; // 标校参数
+	int32			 scan_type = 4; // 请求类型 3：全景， 6：标校
+}
+
+// 全景频谱数据
+message PanoramicScanResult
+{
+    SpectrumData spectrum = 1;	// 频谱数据
+}
+
+// 离散扫描请求
+message DiscreteScanRequest 
+{
+	WorkMode            work_mode = 1; // 工作模式
+    repeated BandParam  band_param = 2;//频段参数
+}
+
+// 离散扫描频谱数据
+message DiscreteScanResult
+{
+    int32		    band_index = 1;	// 所属频段 0到N-1（离散）
+    SpectrumData    spectrum = 2;	// 频谱数据
+}
+
+// 测向请求
+message DirectionRequest 
+{
+	WorkMode        work_mode = 1; // 工作模式
+	double	        center_freq = 2;	// 中心频率
+	double			if_bandwidth = 3;	// 监测带宽
+	double			df_bandwidth = 4;	// 测向带宽
+	ThresholdMode   threshold_mode = 5; // 门限模式
+	int32	        target_count = 6;	// 信源个数 0~8
+}
+
+// 测向结果数据
+message TargetDirection 
+{
+	double	        center_frequency = 1;	// 频率
+	double	        direction = 2;	// 目标方向（单位：°）
+	int32	        confidence = 3;	// 置信度
+	float	        amplitude = 4;	// 幅度（单位：dBm）
+}
+
+// 测向结果数据数组
+message DirectionResult 
+{
+	repeated TargetDirection target_detection = 1;//测向结果数据数组
+}
+
+// 测向频谱数据
+message DirectionSpectrum 
+{
+    SpectrumData spectrum = 1;	// 频谱数据
+}
+
+// 信号分析请求
+message SignalAnalysisRequest {
+	WorkMode        work_mode = 1; // 工作模式
+	BandParam       band_param = 2;	// 频段参数	
+	ThresholdMode   threshold_mode = 3; // 门限模式
+}
+
+// 信号分析结果数据
+message SignalAnalysisResult 
+{
+	spectrum.SignalBand signal_band = 1;
+	modulation.ModType	modulation_type = 2; 	// 信号调制样式
+	float	        	amplitude = 3;			// 幅度（单位：dBm）
+}
+
+// 信号分析频谱数据
+message SignalAnalysisSpectrum 
+{
+	SpectrumData spectrum = 1;	// 频谱数据
+}
+
+// IQ数据请求
+message IQRequest 
+{
+	WorkMode        work_mode = 1; // 工作模式
+	BandParam       band_param = 2;	// 频段参数
+    uint32          points = 3;// 采样点数 0-一直工作，>0采集相应点数后停止工作	
+}
+
+// IQ数据回复
+message IQResult 
+{
+	spectrum.BaseBand base_band = 1;
+	repeated float  data = 4; // IQ数据（单位：dBm， I和Q值交叉排列）
+}
+
+// 设备模块状态
+enum ModuleStatus 
+{
+	ABNORMAL        = 0;	// 异常
+	NORMAL          = 1;	// 正常
+}
+
+// 设备工况
+message DeviceStatus 
+{
+	bool	        connected = 1;	// 设备是否已连接
+	float	        processor_temperature = 2;	// 处理机温度
+	ModuleStatus	processor_status = 3;	// 处理机状态
+	float	        receiver_temperature = 4;	// 接收机温度
+	ModuleStatus	receiver_status = 5;	// 接收机状态
+	float	        mainctl_kernel_temp = 6;	// 主控内核温度
+	float	        mainctl_temperature = 7;	// 主控温度
+	float	        mainctl_humidity = 8;	// 主控湿度
+	float	        mainctl_vccin = 9;	// 主控电压
+	ModuleStatus	mainctl_status = 10;	// 主控状态
+
+}
+
+service DeviceControlService{
+	
+	rpc StartPanoramic(PanoramicScanRequest) returns(DeviceReply){} // 全景监测任务
+	rpc StopPanoramic(google.protobuf.Empty) returns(DeviceReply){} // 停止全景监测任务
+	rpc GetPanoramicSpectrum(google.protobuf.Empty) returns(stream PanoramicScanResult){} //获取全景监测频谱数据
+	
+	rpc StartDiscreteBand(DiscreteScanRequest) returns(DeviceReply){} // 离散扫描监测任务
+	rpc StopDiscreteBand(google.protobuf.Empty) returns(DeviceReply){} // 停止离散扫描监测任务
+	rpc GetDiscreteBandSpectrum(google.protobuf.Empty) returns(stream DiscreteScanResult){} // 获取离散扫描频谱数据
+	
+	rpc StartSignalAnalysis(SignalAnalysisRequest) returns(DeviceReply){} // 信号分析任务
+	rpc StopSignalAnalysis(google.protobuf.Empty) returns(DeviceReply){} // 停止信号分析任务
+	rpc GetSignalAnalysisSpectrum(google.protobuf.Empty) returns(stream SignalAnalysisSpectrum){} // 获取信号分析频谱数据
+	rpc GetSignalAnalysisIQ(google.protobuf.Empty) returns(stream IQResult){} // 获取信号分析频谱数据
+	rpc GetSignalAnalysisResult(google.protobuf.Empty) returns(stream SignalAnalysisResult){} // 获取信号分析结果数据
+	
+	rpc StartDirection(DirectionRequest) returns(DeviceReply){} // 测向任务
+	rpc StopDirection(google.protobuf.Empty) returns(DeviceReply){} // 停止测向任务
+	rpc GetDirectionSpectrum(google.protobuf.Empty) returns(stream DirectionSpectrum){} // 获取测向频谱数据
+	rpc GetDirectionResult(google.protobuf.Empty) returns(stream DirectionResult){} // 获取测向结果数据列表
+	
+	rpc StartIQ(IQRequest) returns(DeviceReply){} // IQ采集任务
+	rpc StopIQ(google.protobuf.Empty) returns(DeviceReply){} // 停止IQ采集任务
+	rpc GetIQData(google.protobuf.Empty) returns(stream IQResult){} // 获取IQ采集数据
+	
+	rpc GetDeviceStatus(google.protobuf.Empty) returns(stream DeviceStatus){} // 获取设备状态	
+}
+

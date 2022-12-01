@@ -1,0 +1,225 @@
+syntax = "proto3";
+
+package zb.dcts.node; 
+
+option java_multiple_files = true;
+option java_package = "com.zb.dcts.node";
+option java_outer_classname = "node";
+import "dcts.proto";
+
+//传感节点Id
+message NodeId 
+{
+    uint32 value = 1;
+}
+  
+//隶属于某传感节点的设备Id
+message DeviceId
+{
+    uint32 value = 1;
+}
+
+//节点设备组合，是任务的最小执行单元
+message NodeDevice
+{
+    NodeId node_id = 1;
+    DeviceId device_id = 2;
+}
+
+//任务类型
+enum PrimaryTaskType 
+{
+    NULL_TASK = 0;          //保留，空任务
+    HYBRID_TASK = 1;           //复合设备任务（预留）
+    SENSOR_TASK = 2;            
+    RADAR_DF_TASK = 3;
+    CZC_QJ_TASK = 4;
+    CZC_DF_TASK = 5;
+    CZC_SM_TASK = 6;
+    DEMO_TASK = 7;
+    ZCZH_TASK = 8;
+};
+
+//0-15 device internal
+//16-31 spectrum monitoring
+//32-47 DF and position
+//48-80 signal analysis
+//81-100 replays
+enum SecondaryTaskType
+{
+    SELF_TEST = 0;        
+    CAL1 = 1;                   //校准
+    CAL2 = 2;
+    EXAMPLE = 3;
+
+    PSCAN = 16;         //全景扫描
+    IF_SCAN = 17;                //中频扫描
+    PULSE_ANALYSIS = 18;	     //脉冲分析
+    PULSE_ANALYSIS_2 = 19;	     //脉冲分析2
+    OSCILLOSCOPE = 20;           //示波器
+    VECTOR_SIGNAL_ANALYSIS=21;   //矢量分析	
+    IQ_RECORDER = 22;            //IQ记盘
+    SIGNAL_GENERATOR = 23;       //信号产生
+
+    POSITION_TDOA = 32;          //tdoa定位
+    DIRECTION_FINDING_AOA = 33;
+    DIRECTION_FINDING_SPATIAL_SPECTRUM = 34;
+
+    DEMODULATE_ANALOG = 48;
+    CLASSIFY_MODULATE = 56;     //调制识别
+    CLASSIFY_ENCODE = 58;       //编码识别
+    CLASSIFY_COMM_SYS = 60;     //传输系统识别
+    DECODE_ADS_B = 70;
+    DECODE_ACARS = 71;
+    DECODE_AIS = 72;
+    IQ_ACQUIRE = 73;
+    DEMO_DETECT = 80;
+    REPLAY_PSCAN = 81;
+    REPLAY_DECODE_ADS_B = 90;
+    REPLAY_DECODE_ACARS = 91;
+    REPLAY_DECODE_AIS = 92;
+    REPLAY_IQ = 93;
+    REPLAY_TDOA = 94;
+    REPLAY_DEMODULATE_ANALOG = 95;
+}
+
+//任务状态
+enum TaskStatus 
+{
+    T_READY  = 0; //就绪
+    T_RUN    = 1; //运行
+    T_ABORT  = 2; //终止
+    T_FINISH = 3; //完成
+}
+
+message TaskType
+{
+    PrimaryTaskType pri_task_type = 1;
+    SecondaryTaskType sec_task_type = 2;
+}
+
+//节点任务摘要
+message TaskSummary 
+{
+    TaskId id = 1;          //任务id
+    TaskType type = 2;      //任务类型
+    DeviceId device = 3;    //所用设备
+    TaskStatus status = 4;  //状态
+    Timestamp startTime = 5;//起始时刻
+}
+
+//设备类型
+enum DeviceType
+{
+    SENSOR_3900 = 0;
+    RADAR_DF = 1;
+    CZC_SM = 2;
+    CZC_DF = 3;
+    CZC_QJ = 4;
+    DEMO = 5;
+    ZCZH = 6;
+}
+
+//设备状态
+enum DeviceStatus
+{
+    D_OFFLINE = 0;      //离线
+    D_IDLE = 1;         //空闲
+    D_ENGAGED = 2;      //占用
+    D_ABNORMAL = 3;     //异常
+}
+
+//设备信息
+message DeviceInfo 
+{
+    DeviceId id = 1;        //节点id
+    DeviceType type = 2;
+    DeviceStatus status = 3;
+    Position position = 4;  //节点位置, wgs-84坐标系，弧度单位
+    Posture posture = 5;
+    repeated Physical physicals = 6;
+}
+  
+//数据传输的状态
+message TransferStatus
+{
+    uint32 send_fail_times = 1;  //发送失败次数
+    uint32 blocked_times = 2;      //处于阻塞状态的次数
+    uint32 sended_message_count = 3; //发送的消息总数
+}
+  
+//节点信息
+message NodeInfo 
+{
+    NodeId id = 1;                              //节点id
+    string name = 2;                            //节点名字
+    Timestamp last_heard = 3;                   //从最近一次收到节点心跳起逝去的秒值
+    repeated TaskSummary tasks = 6;             //节点正在运行的任务列表
+    repeated DeviceInfo devices = 7;            //隶属于节点设备信息列表
+    TransferStatus pipeline_status = 8;         //任务数据管线的状态
+}
+  
+//任务命令头
+message CmdHeader
+{
+    uint32 sequence_number = 1; //命令序列号
+    ErrorType error_code = 2;   //命令错误码
+    TaskId task_id = 3;         //任务id
+    NodeDevice task_runner = 4; //命令执行单元
+};
+  
+//对命令的节点响应
+message NodeReply
+{
+    repeated CmdHeader replys = 1;  //命令响应集合
+}
+  
+//所有节点的信息
+message NodesInfo
+{
+    repeated NodeInfo node_info = 1;
+}
+  
+//任务账号
+message TaskAccount
+{
+    TaskId task_id = 1;   //任务id
+    repeated NodeDevice node_devices = 2; //有效执行该任务的节点
+    NodeReply reply_details = 3;  //节点响应细节
+}
+
+//命令错误码
+enum ErrorType {
+    ERR_NONE = 0;               //无错误
+    ERR_NOTIMPLEMENTED = -1;    //功能未实现
+    ERR_UNKNOWN = -2;           //未知错误
+    ERR_BUSY = -3;              //节点忙
+    ERR_ABORTED = -5;           //操作终止
+    ERR_CMD_NOREPLY = -6;       //响应超时
+    ERR_PARAM = -8;             //参数错误
+    ERR_STATION_NAME_EXISTS = -11;  //节点名称已存在
+    ERR_INVALID_HANDLE = -15;       //无效的句柄
+    ERR_INVALID_REQUEST = -16;      //无效的请求
+    ERR_NO_SENSORS = -20;           //节点无设备
+    ERR_SOCKET_ERROR = -26;         //socket错误
+    ERR_NODE_NOT_FOUND = -27;       //节点未找到
+    ERR_NO_DATA_AVAILABLE = -28;    //没有有效数据
+    ERR_BUFFER_TOO_SMALL = -30;     //缓冲区不足
+    ERR_DIAGNOSTIC = -31;           //诊断错误
+    ERR_COMMAND_FAILED = -38;       //命令执行失败
+    ERR_TIMEOUT = -40;              //超时
+    ERR_STRING_TOO_LONG = -43;      //字符串过长
+    ERR_DATA_TYPE = -52;            //数据类型
+    ERR_AUTHORIZATION = -57;        //鉴权失败
+    ERR_LICENSE = -64;              //授权失效
+    ERR_MEAS_FAILED = -66;          //测量失败
+    ERR_DATA_AVAIL_TIMEOUT = -75;   //数据超时
+    ERR_TASK_NOT_FOUND = -76;       //任务未找到
+    ERR_NODE_TASK_ASSIGN = -77;     //节点任务指派失败
+    ERR_SENSOR_TASK_ASSIGN = -78;   //设备任务指派失败
+    ERR_SENSOR_TASK_START = -79;    //设备任务启动失败
+    ERR_OPEN_FILE = -80;            //打开文件错误
+    ERR_COMPASS_NOT_AVAILABLE = -81;//罗盘不可用
+    ERR_TDOA = -82;                 //TDOA错误
+    ERR_TASK_QUIT = -83;            //任务已退出
+}

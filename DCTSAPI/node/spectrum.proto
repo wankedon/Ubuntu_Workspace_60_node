@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package zb.dcts.node.spectrum;
+
+import "dcts.proto";
+import "node/node.proto";
+
+
+//频率范围
+message FrequencySpan {
+    double start_freq = 1;    //起始频率
+    double stop_freq  = 2;    //终止频率
+}
+
+message FrequencySegment{
+    FrequencySpan freq_span = 1;        //频率范围
+    int32 points = 2;                   //点数
+}
+
+message FrequencyPos{
+    int32 segment_idx = 1;      //段索引
+    int32 seg_internal_offset = 2; //段内偏移，好专业的术语
+}
+
+message FrequencyBand{
+    repeated FrequencySegment segments = 1;
+}
+
+message FrequencyRange{
+    FrequencyPos start_pos = 1;
+    FrequencyPos stop_pos = 2;
+}
+
+//信号带宽
+message SignalBand{
+    double center_frequency = 1;
+    double band_width = 2;
+}
+
+//基带（或中频）
+message BaseBand{
+    double center_frequency = 1;
+    double sample_rate = 2;
+}
+
+enum DataHoldType
+{
+    NO_HOLD = 0;
+    MAX_HOLD = 1;
+    MIN_HOLD = 2;
+    RMS_HOLD = 3;
+    AVG_HOLD = 4;
+}
+
+message DataHoldRequest
+{
+    TaskAccount task_account = 1;    
+    DataHoldType data_hold_type = 2;
+}
+
+//观测重点局部的请求
+message ZoomInRequest 
+{
+    TaskAccount task_account = 1;    
+    FrequencySegment zoom_in_part = 2;           //要重点监测的一个小范围
+}
+
+message View
+{
+    FrequencySpan freq_span = 1;                           //频率范围
+    repeated float cur_trace = 2;                                   //最近时刻曲线
+    repeated float minhold_trace = 3;                               //最大保持线
+    repeated float maxhold_trace = 4;                               //最小保持线
+    repeated float over_threshold_hits = 5;                         //超限命中次数
+}
+
+message Header
+{
+    NodeDevice result_from = 1;         //数据来源
+    string record_id = 2;               //记录id，仅在回放时有效
+    uint32 sequence_number = 3;         //顺序号，每个任务执行者维护自身的顺序号
+    uint32 sweep_count = 4;             //当前上报周期内的扫描次数
+    TimeSpan time_span = 5;             //当前上报周期内的首段和末端采集时刻（由设备提供的时间）
+    Position device_position = 6;       //设备位置
+}

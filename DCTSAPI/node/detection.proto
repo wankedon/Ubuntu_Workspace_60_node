@@ -1,0 +1,184 @@
+syntax = "proto3";
+package zb.dcts.node.detection;
+import "dcts.proto";
+import "node/spectrum.proto";
+import "node/node.proto";
+//----------------------------能量检测--------------------//
+//门限设置/门限判别结果
+message ThresholdSector{      
+    spectrum.FrequencySpan freq_span = 1;  //门限判别的起始终止频率
+    float level = 2;              //门限电平，单位dBm
+}
+
+//历史门限
+message HistoryThresholdParam
+{
+    TimeSpan span = 1;
+    int32 max_load_count = 3;   //最大读取记录个数，因为记录过多，历史门限的生成时间会很长
+    float offset = 4;
+}
+
+//用户自定义门限
+message UserThresholdParam
+{
+    repeated ThresholdSector sectors = 1;   //自定义门限是在若干频段内指定的水平电平值，频段可重叠，可乱序
+}
+
+//自适应门限
+message AdaptiveThresholdParam
+{
+    enum PartitionMode
+    {
+        PM_STANDARD = 0;    //标准模式
+        PM_AGGRESIVE = 1;   //激进模式，将采用更细的粒度统计
+        PM_FAST = 2;        //快速模式，将采用较粗的粒度统计
+    }
+    int32 average_count = 1;    //迭代次数
+    PartitionMode partition_mode = 2;   //分段模式
+    float offset = 3;           //偏移
+}
+
+enum ThresholdType
+{
+    HISTORY = 0;        //历史门限
+    USER_DEFINE = 1;    //用户自定义门限
+    ADAPTIVE = 2;       //自适应门限
+}
+
+message EnergyDetectionParam
+{
+    enum LogicType
+    {
+        LT_AND = 0;     //所有门限都超过，才算
+        LT_OR = 1;      //只要超过任意门限，就算
+    }
+    repeated ThresholdType active_types = 1; //使能的门限类型，可复选历史、用户定义、自适应
+    LogicType logic = 3;                    //复合门限的逻辑关系
+    HistoryThresholdParam history_threshold = 5;
+    UserThresholdParam user_threshold = 6;
+    AdaptiveThresholdParam adaptive_threshold = 7;
+}
+
+message ThresholdRefLine    //门限的参考线
+{
+    ThresholdType type = 1;
+    repeated float threshold_trace = 2;
+}
+
+//----------------------------信号检测--------------------//
+//信号活跃度
+enum SignalActivity
+{
+    ACTIVE = 0;     //当前活跃
+    INACTIVE = 1;   //已不活跃 
+    DECAYED = 2;    //过时
+    MERGED = 3;    //被合并     
+    UNKNOWN = 4;    //未知        
+}
+
+message SignalFeature 
+{
+    TimeSpan       time_span = 1;           //信号出现的时间范围
+    spectrum.SignalBand signal_band = 2;    //信号的频率范围
+    int32 num_sweep = 3;                     //扫描次数
+    StatisticVal amplitude = 4;
+    StatisticVal hits = 5;                      
+    repeated float spectrum_detail = 8;      //信号频谱                
+    repeated float hits_detail = 9;          //出现次数比例 
+}
+
+//信号段，按时间进行分隔
+message SignalSegment
+{
+    string id = 1;
+    int32 segment_seq = 2;            //信号 段号
+    StatisticVal   center_freq = 3;        //中心频率，单位Hz
+    StatisticVal   band_width = 4;         //带宽，单位Hz
+    StatisticVal   amplitude = 5;          //幅度，单位dBm
+    TimeSpan       time_span = 6;          //信号出现的起始和终止时间
+    int32 total_sweep = 7;                      //扫描次数
+    int32 total_hits = 8;                     //出现次数 
+    repeated SignalFeature feature = 9;
+}
+
+enum SegmentationFilterType
+{
+    RESERVED = 0;
+    OVERLAP = 0x1;      //叠加
+    HITS = 0x2;         //基于hits值分段
+    WHITE_LIST = 0x4;   //白名单
+    BLACK_LIST = 0x8;   //黑名单
+}
+
+message HitsSegmentation             //基于命中的分段过滤器参数
+{  
+    repeated DRange hits_prob = 1;    //由客户端设置的检测出现概率区间
+    DRange bandwidth_range = 2;       //待检测信号的带宽范围
+}
+
+message SegmentationParam
+{
+    uint32 enable_filters = 1;          //OVERLAP | HITS | WHITE_LIST | BLACK_LIST
+    int32 num_overlap = 2;              //重叠次数
+    HitsSegmentation hits_param = 3;    //基于命中的分段过滤器参数
+    //后续有过滤器再继续增加
+}
+
+enum MergePolicy  //合并策略选型
+{
+    NO_POLICY = 0x0;
+    SPECTRUM_INTERSECT_POLICY = 0x1;
+    //后续有策略再继续增加
+}
+
+message SpectrumIntersection   //基于频率范围交叠的策略参数设置
+{
+    float  min_intersection_ratio = 1;     //最小的信号频谱重叠比例，百分比(0,1)
+    int32  max_time_gap = 2;                    //时间间隙，单位ms
+}
+
+message MergeParam       //信号合并参数
+{
+    MergePolicy policy = 1;
+    SpectrumIntersection feature_merge_param = 3;  //段与feature层面
+    SpectrumIntersection signal_merge_param = 4; //历史信号列表层面
+    //后续有策略再继续增加
+}
+
+message DetectionOption
+{
+    Boolean clear_signal_lib_history = 1;
+    Integer commit_result_period = 3;   //提交结果的周期（每多少次检测提交一次信号列表）
+}
+
+message DetectionParam
+{
+    EnergyDetectionParam energy_detect_param = 1;   //能量检测参数
+    SegmentationParam segmentation_param = 3;   //信号分段参数
+    MergeParam merge_param = 4;     //信号合并参数
+    DetectionOption options = 5;    //可选项
+}
+
+message SignalList
+{
+    repeated SignalSegment detected_signals = 1;    //检出的信号
+    repeated string merged_signal_id = 2; //被合并的信号id
+}
+
+message DetectionRequest
+{
+    node.TaskAccount task_account = 1;
+    DetectionParam detection_param = 2;
+}
+
+message DetailKeeping
+{
+    repeated string signal_id = 1;
+    bool keeping = 2;
+}
+
+message DetailKeepingRequest
+{
+    node.TaskAccount task_account = 1;
+    DetailKeeping detail_keeping = 2;
+}

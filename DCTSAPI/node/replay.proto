@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package zb.dcts.node.replay;
+
+import "dcts.proto";
+import "node/node.proto";
+
+message ReplayId
+{
+    TaskId task_id = 1;     //回放任务id
+    NodeId node_id = 2;     //执行回放的节点id
+    string record_id = 3;   //回放记录id
+}
+
+message CreateReplayTaskRequest
+{
+    repeated NodeDevice task_runner = 1;    //参与任务的节点，设备设为0
+}
+
+message AdjustOption
+{
+    oneof Option
+    {
+        RealNumber progress = 1; //进度百分比[0,1]
+        RealNumber interval_factor = 2;//间隔的倍数调整[0,n]
+        Boolean pause_resume = 3;//暂停，继续
+    }
+}
+
+message AdjustRequest
+{
+    ReplayId replay_id = 1;
+    AdjustOption option = 2;
+}

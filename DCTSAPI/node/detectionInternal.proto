@@ -1,0 +1,25 @@
+syntax = "proto3";
+package zb.dcts.node.detection;
+import "dcts.proto";
+import "node/spectrum.proto";
+
+message RawHeader
+{
+    uint32 sweep_count = 1;             //当前上报周期内的扫描次数
+    TimeSpan time_span = 2;             //当前上报周期内的首段和末端采集时刻（由设备提供的时间）
+    Position device_position =3 ;       //设备位置
+}
+
+message RawBody
+{
+    spectrum.FrequencySpan freq_span = 1;                           //频率范围
+    repeated float cur_trace = 2;                                   //最近时刻曲线                       
+    repeated float over_threshold_hits = 3;                         //超限命中次数
+}
+
+message RawData
+{
+    RawHeader header = 1;
+    RawBody body = 2;
+    repeated IRange signal_segments = 3;    //信号片段，闭开区间
+}

@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package zb.dcts.node;
+
+import "dcts.proto";
+import "node/node.proto";
+
+enum TaskCmd{
+    T_START = 0;	///< 任务启动
+    T_STOP = 1;		///< 任务停止
+    T_MODIFY = 2;	///< 任务过程指令
+}
+
+enum CSTip{
+    NODE_TICK = 0;
+    SERVER_TICK = 1;
+    NODE_CONTROL = 2;
+    TASK_REQUEST = 3;
+	REPLY = 4;
+};
+
+message NodeIdentity{
+    string node_name = 1;
+    NodeId id = 3; 
+    Position default_pos = 2;
+}
+
+message WANConfig{
+    ZeromqLinkCfg client = 1;
+    ZeromqLinkCfg source = 2;
+    ZeromqLinkCfg pub = 3;
+    ZeromqLinkCfg sub = 4;
+}
+
+message DeviceConfig{
+    DeviceType type = 1;
+    IPv4Address address = 2;
+    DeviceId id = 3;
+}
+
+message LANConfig{
+    repeated DeviceConfig cluster_3900 = 1;
+    repeated DeviceConfig cluster_radarDF = 2;
+}
+
+message NodeConfig{
+    NodeIdentity identity = 1;
+    WANConfig WAN_conf = 2;
+    LANConfig LAN_conf = 3;
+}
+
+
+message TaskMsgId
+{
+    uint32 tid = 1;
+    uint32 nid = 2;
+    uint32 did = 3;
+}
+
+message AbnormalMsgRecord
+{
+    repeated TaskMsgId task_msg_id = 1; 
+}
+
+message ServerConfig{
+    ZeromqLinkCfg server = 1;
+    ZeromqLinkCfg sink = 2;
+    ZeromqLinkCfg pub = 3;
+    ZeromqLinkCfg sub = 4;
+    map<string, IPv4Address> services = 5;
+}

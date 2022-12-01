@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package zb.dcts.node.modulation;    //调制域分析
+
+enum ModType
+{
+	UNKNOWM = 0;
+	AM = 1;
+	AMSC = 2;
+	AMTC = 3;
+	SSB = 4;
+	DSB = 5;
+	VSB = 6;
+	LSB = 7;
+	USB = 8;
+	FM = 11;
+	ASK = 21;
+	ASK2 = 22;
+	ASK4 = 23;
+	ASK8 = 24;
+	ASK16 = 25;
+	FSK = 31;
+	FSK2 = 32;
+	FSK4 = 33;
+	FSK8 = 34;
+	FSK16 = 35;
+	MSK = 36;
+	PSK = 41;
+	BPSK = 42;
+	OQPSK = 43;
+	QPSK = 44;
+	Pi4QPSK = 45;
+	PSK8 = 46;
+	PSK16 = 47;
+	D8PSK = 48;
+	QAM = 51;
+	QAM16 = 52;
+	QAM32 = 53;
+	QAM64 = 54;
+	QAM128 = 55;
+	QAM256 = 56;
+	QAM512 = 57;
+	QAM1024 = 58;
+	CW = 70;
+	Noise = 80;
+}
+
+enum SigType
+{
+	UN_DETECT = 0;
+	NARROW_BAND = 1;
+	WIDE_BAND = 2;
+	PULSE = 3;
+}
+
+message RecognizeResult
+{
+	SigType signal_type = 1;
+	ModType mod_type = 2;
+	double center_freq = 3;
+	double band_width = 4;
+}

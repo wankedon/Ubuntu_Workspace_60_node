@@ -1,0 +1,153 @@
+syntax = "proto3";
+
+package zb.dcts; 
+
+option java_multiple_files = true;
+option java_package = "com.zb.dcts";
+option java_outer_classname = "dcts";
+
+//任务Id
+message TaskId 
+{
+  uint32 value = 1;
+}
+
+//时间戳，UTC time stamp
+message Timestamp 
+{
+  uint32 seconds = 1;  //UTC时间 自1970-1-1日零点以来的秒值
+  uint32 nanos = 2;    //本秒内的纳秒偏移
+}
+
+//时间范围
+message TimeSpan
+{
+  Timestamp start_time = 1;
+  Timestamp stop_time = 2;
+}
+
+//方位信息 WGS84坐标体系
+message Position 
+{
+  double latitude  = 1;	        //纬度，单位 弧度
+  double longitude = 2;         //经度，单位 弧度
+  double altitude = 3;         //海拔，单位 米
+}
+
+//姿态信息
+message Posture
+{
+  double yaw = 1;     // 偏航角-度 正北方向夹角-顺时针为正(0°~360°)
+  double pitch = 2;   // 俯仰角-度 水平为零向下为负向上为正(-90~90)
+  double roll = 3;    // 横滚-度 机体向右为正-反之为负
+}
+
+//方向
+message Direction
+{
+  double azimuth = 1;       //水平角 正北方向夹角-顺时针为正(0°~360°)
+  double pitch = 2;       //俯仰角 水平为零向下为负向上为正(-90~90)
+}
+
+message DRange
+{
+  double start = 1;
+  double stop = 2;
+}
+
+message IRange
+{
+  int32 start = 1;
+  int32 stop = 2;
+}
+
+//温湿度等物理量
+message Physical
+{
+  enum Type
+  {
+    TEMPERATURE = 0;
+    HUMIDITY = 1;
+    ANGLE = 2;
+    DISTANCE = 3;
+    VELOCITY = 4;
+    ANGULAR_VELOCITY = 5;
+    VOTAGE = 6;
+    POWER = 7;
+    CURRENT = 8;
+  }
+  Type type = 1;
+  double value = 2;
+  string unit = 3;
+}
+
+message Integer
+{
+  int64 value = 1;
+}
+
+message Boolean
+{
+  bool value = 1;
+}
+
+message RealNumber
+{
+  double value = 1;
+}
+
+message ComplexNumber
+{
+  double real = 1;
+  double image = 2;
+}
+
+message StatisticVal
+{
+    double up = 1;      //上限
+    double down = 2;    //下限
+    double cur = 3;     //当前
+    double mean = 4;    //平均
+}
+
+message HeartbeatCfg
+{
+  int32 heartbeat_interval = 1;
+  int32 heartbeat_timeout = 2;
+  int32 heartbeat_ttl = 3; 
+}
+
+message ReconnectionCfg
+{
+  int32 reconnect_interval = 1;
+  int32 reconnect_interval_max = 2;
+}
+
+message MsgSendOption
+{
+  int32 hwm = 1;
+  int32 linger = 2;
+  int32 timeout = 3;
+}
+
+message IPv4Address
+{
+  string ip = 1;
+  int32 port = 2;
+}
+
+message ZeromqLinkCfg
+{
+  IPv4Address address = 1;
+  string link_name = 2;
+  HeartbeatCfg heartbeat_cfg = 4;
+  ReconnectionCfg reconnect_cfg = 5;
+  MsgSendOption msg_send_cfg = 6;
+}
+
+message TimerParam
+{
+    int32 interval_in_ms = 1;
+    int32 times = 2;
+}
+

@@ -1,0 +1,87 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(DCTSNode C CXX)
+
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Debug")#Release  Debug
+endif()
+
+#set toolchain
+SET(CMAKE_SYSTEM_NAME Linux)
+SET(CMAKE_SYSTEM_PROCESSOR aarch64)
+set(CMAKE_STAGING_PREFIX /home/forlinx/Workspace/grpc-stage)
+set(CMAKE_C_COMPILER /usr/bin/aarch64-linux-gnu-gcc-7)
+set(CMAKE_CXX_COMPILER /usr/bin/aarch64-linux-gnu-g++-7)
+set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
+set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
+set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
+
+find_package(Threads REQUIRED)
+
+# Find Protobuf
+set(Protobuf_DIR /home/forlinx/Workspace/grpc-stage/lib/cmake/protobuf) 
+set(protobuf_MODULE_COMPATIBLE TRUE)
+find_package(Protobuf CONFIG REQUIRED)
+message(STATUS "Using protobuf ${Protobuf_VERSION}")
+
+set(_PROTOBUF_LIBPROTOBUF protobuf::libprotobuf)
+set(_REFLECTION gRPC::grpc++_reflection)
+if(CMAKE_CROSSCOMPILING)
+  find_program(_PROTOBUF_PROTOC protoc)
+else()
+  set(_PROTOBUF_PROTOC $<TARGET_FILE:protobuf::protoc>)
+endif()
+
+# Find gRPC
+set(gRPC_DIR /home/forlinx/Workspace/grpc-stage/lib/cmake/grpc)
+find_package(gRPC CONFIG REQUIRED)
+message(STATUS "Using gRPC ${gRPC_VERSION}")
+
+set(_GRPC_GRPCPP gRPC::grpc++)
+if(CMAKE_CROSSCOMPILING)
+  find_program(_GRPC_CPP_PLUGIN_EXECUTABLE grpc_cpp_plugin)
+else()
+  set(_GRPC_CPP_PLUGIN_EXECUTABLE $<TARGET_FILE:gRPC::grpc_cpp_plugin>)
+endif()
+
+#find Boost headers 
+set(BOOST_ROOT "/home/forlinx/Workspace/boost_1_76_0")
+find_package(Boost 1.76.0)
+if(Boost_FOUND)
+    include_directories(${Boost_INCLUDE_DIRS})
+    MESSAGE(STATUS "Using Boost ${Boost_LIB_VERSION}.")
+endif()
+
+#add definitions
+add_definitions(-DZMQ_BUILD_DRAFT_API)
+add_definitions(-DCZMQ_BUILD_DRAFT_API)
+add_definitions(-DPUGIXML_WCHAR_MODE)
+
+#project directory
+include_directories(/home/forlinx/Workspace/czmq/installed/include)#czmq
+include_directories(/home/forlinx/Workspace/vcpkg/installed/arm64-linux/include) #vcpkg
+include_directories(${PROJECT_SOURCE_DIR}/ConfigLoader)
+include_directories(${PROJECT_SOURCE_DIR}/DeviceManager/Device)
+include_directories(${PROJECT_SOURCE_DIR}/DeviceManager/ZczhDevice)
+include_directories(${PROJECT_SOURCE_DIR}/DistComm)
+include_directories(${PROJECT_SOURCE_DIR}/PchHeader)
+include_directories(${PROJECT_SOURCE_DIR}/Proto)
+include_directories(${PROJECT_SOURCE_DIR}/SignalDetection)
+include_directories(${PROJECT_SOURCE_DIR}/Spectrum)
+include_directories(${PROJECT_SOURCE_DIR}/TaskManager/NodeTask)
+include_directories(${PROJECT_SOURCE_DIR}/TaskManager/ZczhTask)
+include_directories(${PROJECT_SOURCE_DIR}/Utility)
+
+#link_directories
+LINK_DIRECTORIES(/home/forlinx/Workspace/czmq/installed/lib)#czmq
+LINK_DIRECTORIES(/home/forlinx/Workspace/vcpkg/installed/arm64-linux/lib)#vcpkg
+LINK_DIRECTORIES(${PROJECT_SOURCE_DIR}/lib)
+LINK_DIRECTORIES(${PROJECT_BINARY_DIR}/lib)
+
+#set ouput path
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
+
+#add subdirectory
+add_subdirectory(Src)
